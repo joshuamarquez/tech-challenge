@@ -1,0 +1,111 @@
+<div id="map" class="map"></div>
+<script>
+  var iconFeatures = [];
+
+  function createFeature(data) {
+    var coords = latlonToCoords(data.latitude, data.longitude);
+
+    var iconFeature = new ol.Feature({
+      geometry: new ol.geom.Point(coords)
+    });
+
+    var iconStyle = new ol.style.Style({
+      text: new ol.style.Text({
+        text: data.name,
+        font: 'normal 18px Arial',
+        textAlign: 'center',
+        textBaseline: 'middle',
+        fill: new ol.style.Fill({
+          color: 'white',
+        }),
+        stroke: new ol.style.Stroke({
+          color: 'black',
+          width: 2
+        })
+      })
+    });
+
+    iconFeature.setId(data.id);
+    iconFeature.setStyle(iconStyle);
+
+    return iconFeature;
+  }
+
+  function updateFeature(feature, data) {
+    if (data.name) {
+      var style = feature.getStyle();
+      style.getText().setText(data.name);
+      feature.setStyle(style);
+    }
+
+    if (data.latitude && data.longitude) {
+      var coords = latlonToCoords(data.latitude, data.longitude);
+      feature.getGeometry().setCoordinates(coords);
+    }
+  }
+
+  function latlonToCoords(latitude, longitude) {
+    return ol.proj.fromLonLat([longitude, latitude]);
+  }
+
+  function fitView() {
+    var extent = vectorSource.getExtent();
+    var size = map.getSize();
+
+    map.getView().fit(extent, size);
+  }
+
+  io.socket.get('/location', (body, response) => {
+    var features = body.map((location) => {
+      return createFeature(location);
+    });
+
+    vectorSource.addFeatures(features);
+
+    if (features.length > 0) {
+      fitView();
+    }
+  });
+
+  io.socket.on('location', (event) => {
+    if (event.verb === 'updated') {
+      var feature = vectorSource.getFeatureById(event.id);
+
+      updateFeature(feature, event.data);
+    }
+
+    if (event.verb === 'created') {
+      var feature = createFeature(event.data);
+      vectorSource.addFeatures([feature]);
+    }
+
+    fitView();
+  });
+
+  var vectorSource = new ol.source.Vector({
+    features: iconFeatures
+  });
+
+  var vectorLayer = new ol.layer.Vector({
+    source: vectorSource
+  });
+
+  var map = new ol.Map({
+    layers: [
+      new ol.layer.Tile({
+        source: new ol.source.Stamen({layer: 'watercolor'})
+      }),
+      vectorLayer
+    ],
+    target: document.getElementById('map'),
+    controls: ol.control.defaults({
+      attributionOptions: {
+        collapsible: false
+      }
+    }),
+    view: new ol.View({
+      center: [0, 0],
+      zoom: 2
+    })
+  });
+</script>

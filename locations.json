@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Guadalajara",
+    "latitude": 20.659699,
+    "longitude": -103.349609
+  },
+  {
+    "id": 2,
+    "name": "San Francisco",
+    "latitude": 37.774929,
+    "longitude": -122.419416
+  },
+  {
+    "id": 3,
+    "name": "La Habana",
+    "latitude": 23.113592,
+    "longitude": -82.366596
+  }
+]
